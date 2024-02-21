@@ -1,0 +1,47 @@
+# Default values for playground-tcp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+kafkaBroadcastTopic: "" # topic to consume/produce broadcast events
+kafkaLogsTopic: "" # topic to produce logs
+bufferSize: 128 # size of allocated read buffer
+gracePeriod: 60 # k8s period before sending SIGKILL
+sigtermTimeout: 30 # tcp server holds this amount of seconds before canceling context
+kafkaPort: 9092
+memcachedPort: 11211
+
+podLabels:
+  app: tcp-server
+  version: v1
+
+resources: {}
+
+autoscaling:
+  maxEstablishedTCP: 5k
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  scaleUpPodsPerPeriod: 1
+  scaleUpStabilizationPeriod: 0
+  scaleUpPeriod: 30
+  scaleDownPodsPerPeriod: 1
+  scaleDownStabilizationPeriod: 45
+  scaleDownPeriod: 30
+
+serviceAccount:
+  annotations:
+    kubernetes.io/enforce-mountable-secrets: 'true'
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podSecurityContext: {}
+securityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL

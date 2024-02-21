@@ -1,0 +1,249 @@
+lbIPAddrs: &externalIPs [192.168.58.2] # calico cni / minikube tunnel
+
+tcpPort: &tcpServerPort 40000
+udpPort: &udpServerPort 50000
+promPort: &prometheusPort 9090
+kafPort: &kafkaPort 9092
+cAdvPort: &cAdvisorPort 8080
+mcPort: &memcachedPort 11211
+esPort: &elasticsearchPort 9200
+
+kafkaCId: &kafkaClusterId "YjkwYjY3ZWJiYWVmNGQ4ZT"
+kafkaUser: &kafkaClientUser "user"
+kafkaPassword: &kafkaClientPassword "password"
+kafkaLogTopic: &kafkaLogsTopic "pods-logs"
+kafkaBcastTopic: &kafkaBroadcastTopic "broadcast"
+
+esUser: &elasticsearchUsername "elastic"
+esPass: &elasticsearchPassword "password"
+
+
+eck-operator:
+  securityContext: {}
+
+elasticsearch:
+  extraEnvs:
+  - name: ingest.geoip.downloader.enabled
+    value: "false"
+  replicas: 1
+  minimumMasterNodes: 3
+  secret:
+    enabled: true
+    password: *elasticsearchPassword
+  httpPort: *elasticsearchPort
+  podSecurityContext: {}
+  securityContext:
+    capabilities:
+      add:
+        - ALL
+  volumeClaimTemplate:
+    accessModes: ["ReadWriteMany"]
+    resources:
+      requests:
+        storage: 10Gi
+
+logger:
+  image:
+    repository: docker.io/library/logger
+    tag: "1.2.1"
+    imagePullSecrets: []
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "128m"
+    limits:
+      memory: "512Mi"
+      cpu: "512m"
+  kafkaLogsTopic: *kafkaLogsTopic
+  kafkaPort: *kafkaPort
+  elasticsearchPort: *elasticsearchPort
+  elasticsearchUsername: *elasticsearchUsername
+  elasticsearchPassword: *elasticsearchPassword
+
+tcp-server:
+  image:
+    repository: docker.io/library/tcp-server
+    tag: "1.1.0"
+    imagePullSecrets: []
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "1024Mi"
+      cpu: "1024m"
+    limits:
+      memory: "2048Mi"
+      cpu: "2000m"
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 5
+    maxEstablishedTCP: 5k
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  service:
+    type: LoadBalancer
+    port: *tcpServerPort
+    externalIPs: *externalIPs
+  kafkaPort: *kafkaPort
+  kafkaUser: *kafkaClientUser
+  kafkaLogsTopic: *kafkaLogsTopic
+  kafkaBroadcastTopic: *kafkaBroadcastTopic
+  memcachedPort: *memcachedPort
+
+udp-server:
+  image:
+    repository: docker.io/library/udp-server
+    tag: "1.1.0"
+    imagePullSecrets: []
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "1024Mi"
+      cpu: "1024m"
+    limits:
+      memory: "2048Mi"
+      cpu: "2000m"
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 5
+    receivePacketsAvgValue: 25k
+    targetCPUUtilizationPercentage: 120
+    targetMemoryUtilizationPercentage: 120
+  service:
+    type: LoadBalancer
+    port: *udpServerPort
+    externalIPs: *externalIPs
+  kafkaPort: *kafkaPort
+  kafkaUser: *kafkaClientUser
+  kafkaLogsTopic: *kafkaLogsTopic
+  memcachedPort: *memcachedPort
+
+kafka:
+  kraft:
+    clusterId: *kafkaClusterId
+  volumePermissions:
+    enabled: true
+  listeners:
+    client:
+      sslClientAuth: None
+      protocol: SASL_PLAINTEXT
+  sasl:
+    interbroker:
+      user: "inter_broker_user"
+      password: "inter_broker_password"
+    controller:
+      user: "controller_user"
+      password: "controller_password"
+    client:
+      users:
+      - *kafkaClientUser
+      passwords:
+      - *kafkaClientPassword
+  controller:
+    replicaCount: 3
+    persistence:
+      accessModes: ["ReadWriteOnce"]
+
+memcached:
+  containerPorts:
+    memcached: *memcachedPort
+  architecture: standalone
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "128m"
+    limits:
+      memory: "2048Mi"
+      cpu: "1024m"
+
+
+kube-prometheus-stack:
+    namespaceOverride: monitoring
+    kube-state-metrics:
+      namespaceOverride: monitoring
+    prometheus-node-exporter:
+      namespaceOverride: monitoring
+    prometheus:
+      service:
+        port: *prometheusPort
+        targetPort: *prometheusPort
+      prometheusSpec:
+        additionalScrapeConfigs:
+        - job_name: 'cadvisor'
+          kubernetes_sd_configs:
+            - role: pod
+              selectors:
+                - role: "pod"
+                  label: "app=cadvisor"
+          scrape_interval: 10s
+          metrics_path: '/metrics'
+          relabel_configs:
+          - source_labels: [ __name__ ]
+            regex: '!container_network_*'
+            action: drop
+    alertmanager:
+      enabled: false
+    grafana:
+      enabled: false
+    kubeApiServer:
+      enabled: false
+    kubelet:
+      enabled: false
+    kubeControllerManager:
+      enabled: false
+    coreDns:
+      enabled: false
+    kubeDns:
+      enabled: false
+    kubeEtcd:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeProxy:
+      enabled: false
+    kubeStateMetrics:
+      enabled: false
+
+prometheus-adapter:
+  namespaceOverride: monitoring
+  prometheus:
+    url:  "http://{{ tpl .Release.Name . }}-kube-prometheus-stack-prometheus.monitoring"
+    port: *prometheusPort
+  rules:
+    default: true
+    custom:
+    - seriesQuery: '{__name__=~"container_network_receive_packets_total", container_label_io_kubernetes_pod_name=~"(.*)udp-server(.*)", container_label_io_kubernetes_container_name="POD"}'
+      resources:
+        overrides:
+          container_label_io_kubernetes_pod_namespace: {resource: "namespace"}
+          container_label_io_kubernetes_pod_name: {resource: "pod"}
+      name:
+        matches: "^(.*)"
+        as: "udp_packets_received"
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m])) by (<<.GroupBy>>)'
+    - seriesQuery: '{__name__=~"container_network_tcp6_usage_total",tcp_state="established", container_label_io_kubernetes_pod_name=~"(.*)tcp-server(.*)", container_label_io_kubernetes_container_name="POD"}'
+      resources:
+        overrides:
+          container_label_io_kubernetes_pod_namespace: {resource: "namespace"}
+          container_label_io_kubernetes_pod_name: {resource: "pod"}
+      name:
+        matches: "^(.*)"
+        as: "tcp_state_established"
+      metricsQuery: 'sum(max_over_time(<<.Series>>{<<.LabelMatchers>>}[30s])) by (<<.GroupBy>>)'
+
+cadvisor:
+  # namespaceOverride: monitoring
+  # nameOverride: "cadvisor"
+  image:
+    tag: latest
+  container:
+    port: *cAdvisorPort
+    additionalArgs:
+      # - --allow_dynamic_housekeeping=true
+      - --housekeeping_interval=10s
+      - --max_housekeeping_interval=15s
+      - --event_storage_event_limit=default=0
+      - --event_storage_age_limit=default=0
+      - --disable_metrics=accelerator,cpu_topology,disk,diskIO,memory_numa,percpu,sched,process,hugetlb,referenced_memory,resctrl #network,tcp,udp
+      - --docker_only

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "playground-tcp.fullname" . }}
+  labels:
+    {{- include "playground-tcp.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "playground-tcp.selectorLabels" . | nindent 4 }}
+  externalTrafficPolicy: Cluster
+  ports:
+  - name: tcp
+    port: {{ .Values.service.port }}
+    protocol: TCP
+  externalIPs:
+    {{- range $ip := .Values.service.externalIPs }}
+    - {{ $ip }}
+    {{- end}}
+  clusterIP: {{ .Values.service.clusterIP }}
+  clusterIPs: {{ .Values.service.clusterIPs }}

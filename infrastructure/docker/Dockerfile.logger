@@ -1,0 +1,20 @@
+FROM golang:1.21-alpine AS build
+ARG APP_DIR
+
+WORKDIR /logger
+COPY utils/ /logger/utils
+WORKDIR /logger/utils
+RUN go mod download
+
+WORKDIR /logger
+COPY $APP_DIR/go.mod $APP_DIR/go.sum /logger
+RUN go mod edit -replace satikin.com/utils=./utils/
+RUN go mod download
+COPY $APP_DIR/*.go /logger
+RUN CGO_ENABLED=0 GOOS=linux go build -o dist
+COPY $APP_DIR/general-log.elasticsearch.conf.json /logger
+
+FROM scratch
+COPY --from=build /logger/dist /dist
+COPY --from=build /logger/general-log.elasticsearch.conf.json /general-log.elasticsearch.conf.json
+USER nonroot:nonroot

@@ -1,0 +1,51 @@
+# Default values for playground-udp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+workers: 64
+gracePeriod: 60 # k8s period before sending SIGKILL
+sigtermTimeout: 30 # tcp server holds this amount of seconds before canceling context
+bufferSize: 128 # size of allocated read buffer
+memcachedPort: 11211
+
+image:
+  repository: docker.io/library/go-udp
+  pullPolicy: IfNotPresent
+  tag: "latest"
+imagePullSecrets: []
+
+podLabels:
+  app: udp-server
+  version: v1
+
+resources: {}
+autoscaling:
+  receivePacketsAvgValue: 5k
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  scaleUpPodsPerPeriod: 1
+  scaleUpStabilizationPeriod: 0
+  scaleUpPeriod: 30
+  scaleDownPodsPerPeriod: 1
+  scaleDownStabilizationPeriod: 600
+  scaleDownPeriod: 600
+
+serviceAccount:
+  automount: true
+  annotations: {}
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podSecurityContext: {}
+securityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+

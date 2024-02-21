@@ -1,0 +1,33 @@
+# using 172.23.0.2 as self ip addr
+
+version: '2'
+networks:
+  playground:
+    name: "ps"
+    external: "true"
+
+services:
+  udp-server:
+    restart: on-failure
+    # depends_on:
+    #   - memcached
+    networks:
+      - playground
+    image: 'udp-server:1.0.3'
+    ports:
+      - '50000:50000/udp'
+    command: ["/usr/src/server/dist"]
+  tcp-server:
+    restart: on-failure
+    # depends_on:
+    #   - kafka
+    #   - memcached
+    networks:
+      - playground
+    image: 'tcp-server:1.0.3'
+    ports:
+      - '40000:40000'
+    command: ["/usr/src/server/dist"]
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - MEMCACHED=memcached:11211

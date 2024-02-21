@@ -1,0 +1,53 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "playground-udp.fullname" . }}
+  labels:
+    {{- include "playground-udp.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "playground-udp.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+      {{- if .Values.autoscaling.receivePacketsAvgValue }}
+      - type: Pods
+        pods:
+          metric:
+            name: udp_packets_received
+          target:
+            type: AverageValue
+            averageValue: {{ .Values.autoscaling.receivePacketsAvgValue }}
+      {{- end }}
+      {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+      {{- end }}
+      {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+      {{- end }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.scaleUpStabilizationPeriod }}
+      policies:
+      - type: Pods
+        value: {{ .Values.autoscaling.scaleUpPodsPerPeriod }}
+        periodSeconds: {{ .Values.autoscaling.scaleUpPeriod }}
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.scaleDownStabilizationPeriod }}
+      policies:
+      - type: Pods
+        value: {{ .Values.autoscaling.scaleDownPodsPerPeriod }}
+        periodSeconds: {{ .Values.autoscaling.scaleDownPeriod }}
+      selectPolicy: Max

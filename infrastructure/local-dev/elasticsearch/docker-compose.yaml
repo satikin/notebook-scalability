@@ -1,0 +1,37 @@
+# using 172.23.0.2 as self ip addr
+
+version: '2'
+networks:
+  playground:
+    name: "ps"
+    external: "true"
+
+services:
+  elasticvue:
+    networks:
+      - playground
+    image: 'cars10/elasticvue'
+    ports:
+      - '8080:8080'
+  elasticsearch:
+    hostname: elasticsearch
+    networks:
+      - playground
+    image: 'elasticsearch:8.12.1'
+    ports:
+      - '9200:9200'
+    environment:
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=password
+      # - xpack.security.enabled=true
+      - http.cors.enabled=true
+      - http.cors.allow-origin=http://localhost:8080
+      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+
+
+# curl -XGET 'localhost:9200/general-logs/_search?search_type=scan&scroll=10m&size=50' -d '
+# {
+#     "query" : {
+#         "match_all" : {}
+#     }
+# }'

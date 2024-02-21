@@ -1,0 +1,59 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: '{{ include "playground-tcp.fullname" . }}-default'
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "playground-tcp.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress: []
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: '{{ include "playground-tcp.fullname" . }}-enabled'
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "playground-tcp.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+  egress:
+    - to:
+      # - podSelector:
+      #     matchLabels:
+      #       k8s-app: kube-dns
+      ports:
+        - protocol: TCP
+          port: {{ .Values.kafkaPort }}
+    - to:
+      # - podSelector:
+      #     matchLabels:
+      #       k8s-app: kube-dns
+      ports:
+        - protocol: TCP
+          port: {{ .Values.memcachedPort }}
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+      ports:
+      - protocol: UDP
+        port: 53
+      - protocol: TCP
+        port: 53

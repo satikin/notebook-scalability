@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "playground-logger.fullname" . }}
+  labels:
+    {{- include "playground-logger.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "playground-logger.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "playground-logger.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.gracePeriod }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: '{{ include "playground-logger.fullname" . }}-sa'
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/dist"]
+          env:
+          - name: ELASTICSEARCH_USERNAME
+            value: {{ .Values.elasticsearchUsername }}
+          - name: ELASTICSEARCH_PASSWORD
+            value: {{ .Values.elasticsearchPassword }}
+          - name: ELASTICSEARCH_ENDPOINT
+            value: {{ printf "https://elasticsearch-master.%s:%v" .Release.Namespace .Values.elasticsearchPort }}
+          - name: KAFKA_BROKERS
+            value: {{ printf "%s-kafka.%s:%v" .Release.Name .Release.Namespace .Values.kafkaPort }}
+          - name: KAFKA_SASL_USER
+            value: "{{ .Values.kafkaUser }}"
+          - name: KAFKA_LOGGING_TOPIC
+            value: "{{ .Values.kafkaLogsTopic }}"
+          - name: KAFKA_SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ printf "%s-kafka-user-passwords" .Release.Name }}
+                key: client-passwords
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

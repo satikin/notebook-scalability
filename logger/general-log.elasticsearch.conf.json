@@ -1,0 +1,15 @@
+{
+  "mappings": {
+    "properties": {
+      "Text": {
+        "type":     "text",
+      },
+      "Pod": {
+        "type":     "text",
+      },
+      "Timestamp": {
+        "type":     "date"
+      },
+    }
+  },
+}

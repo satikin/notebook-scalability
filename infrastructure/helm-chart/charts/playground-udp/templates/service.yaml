@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "playground-udp.fullname" . }}
+  labels:
+    {{- include "playground-udp.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "playground-udp.selectorLabels" . | nindent 4 }}
+  externalTrafficPolicy: Cluster
+  ports:
+  - name: udp
+    port: {{ .Values.service.port }}
+    protocol: UDP
+  externalIPs:
+    {{- range $ip := .Values.service.externalIPs }}
+    - {{ $ip }}
+    {{- end}}
+  clusterIP: {{ .Values.service.clusterIP }}
+  clusterIPs: {{ .Values.service.clusterIPs }}

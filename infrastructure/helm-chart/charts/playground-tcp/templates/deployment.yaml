@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "playground-tcp.fullname" . }}
+  labels:
+    {{- include "playground-tcp.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "playground-tcp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "playground-tcp.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.gracePeriod }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: '{{ include "playground-tcp.fullname" . }}-sa'
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/dist"]
+          ports:
+          - containerPort: {{ .Values.service.port }}
+          env:
+          - name: PORT
+            value: "{{ .Values.service.port }}"
+          - name: BUFF_SIZE
+            value: "{{ .Values.bufferSize }}"
+          - name: SIGTERM_TIMEOUT
+            value: "{{ .Values.sigtermTimeout }}"
+          - name: MEMCACHED_SERVICE
+            value: "{{ .Release.Name }}-memcached.{{ .Release.Namespace }}.svc.cluster.local"
+          - name: MEMCACHED_PORT
+            value: "{{ .Values.memcachedPort }}"
+          - name: KAFKA_BROKERS
+            value: {{ printf "%s-kafka.%s:%v" .Release.Name .Release.Namespace .Values.kafkaPort }}
+          - name: KAFKA_SASL_USER
+            value: "{{ .Values.kafkaUser }}"
+          - name: KAFKA_BCAST_TOPIC
+            value: "{{ .Values.kafkaBroadcastTopic }}"
+          - name: KAFKA_LOGGING_TOPIC
+            value: "{{ .Values.kafkaLogsTopic }}"
+          - name: KAFKA_MC_TOPIC_PREFIX
+            value: "memcache-update-servers"
+          - name: KAFKA_SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ printf "%s-kafka-user-passwords" .Release.Name }}
+                key: client-passwords
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IPADDR
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

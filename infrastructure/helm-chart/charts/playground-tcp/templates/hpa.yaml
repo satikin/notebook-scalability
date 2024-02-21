@@ -1,0 +1,53 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "playground-tcp.fullname" . }}
+  labels:
+    {{- include "playground-tcp.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "playground-tcp.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+      {{- if .Values.autoscaling.maxEstablishedTCP }}
+      - type: Pods
+        pods:
+          metric:
+            name: tcp_state_established
+          target:
+            type: AverageValue
+            averageValue: {{ .Values.autoscaling.maxEstablishedTCP }}
+      {{- end }}
+      {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+      {{- end }}
+      {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+      {{- end }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.scaleUpStabilizationPeriod }}
+      policies:
+      - type: Pods
+        value: {{ .Values.autoscaling.scaleUpPodsPerPeriod }}
+        periodSeconds: {{ .Values.autoscaling.scaleUpPeriod }}
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.scaleDownStabilizationPeriod }}
+      policies:
+      - type: Pods
+        value: {{ .Values.autoscaling.scaleDownPodsPerPeriod }}
+        periodSeconds: {{ .Values.autoscaling.scaleDownPeriod }}
+      selectPolicy: Max
