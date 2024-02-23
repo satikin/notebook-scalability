@@ -1,4 +1,4 @@
-Run `docker compose up` in `kafka-memcached` & `elasticsearch` directory to run kafka, memcache, elasticsearch & elasticvue containers.
+Run `docker compose up` in `kafka-memcached` & `elasticsearch` directory to run Kafka, Memcached, Elasticsearch & Elasticvue containers.
 
 Edit your `/etc/hostnames` to match hostname kafka with Kafka's container IP address or set this address in `KAFKA_CFG_LISTENERS`, `KAFKA_CFG_ADVERTISED_LISTENERS` instead of `kafka` and run again `docker compose up`. SASL plaintext authentication is used, the credentials are set by process variables.
 

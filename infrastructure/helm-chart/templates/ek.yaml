@@ -1,0 +1,59 @@
+# This sample sets up an Elasticsearch cluster with 3 nodes.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: "{{ .Release.Name }}"
+spec:
+  version: 8.12.1
+  nodeSets:
+  - name: "{{ .Values.elasticsearch.name }}"
+    config:
+      node.roles: ["master", "data", "ingest", "ml"]
+      node.store.allow_mmap: false
+    podTemplate:
+      metadata:
+        labels: {}
+      spec:
+        initContainers:
+        - name: data-dir-permissions
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command:
+            - bash
+            - -c
+            - |
+              chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/data
+        containers:
+        - name: elasticsearch
+          resources:
+            limits:
+              memory: 4Gi
+              cpu: 1
+          env:
+          - name: ES_JAVA_OPTS
+            value: "-Xms2g -Xmx2g"
+    count: 1
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: standard
+
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: "{{ .Release.Name }}"
+spec:
+  version: 8.12.2
+  count: 1
+  elasticsearchRef:
+    name: "{{ .Release.Name }}"

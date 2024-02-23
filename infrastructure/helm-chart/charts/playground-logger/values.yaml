@@ -5,8 +5,8 @@
 kafkaLogsTopic: ""
 kafkaUser: ""
 kafkaPassword: ""
-elasticsearchUsername: ""
-elasticsearchPassword: ""
+elasticsearchUsername: "elastic"
+elasticsearchName: "elastic" # k8s name
 elasticsearchPort: 9200
 kafkaPort: 9092
 

@@ -2,11 +2,11 @@ lbIPAddrs: &externalIPs [192.168.58.2] # calico cni / minikube tunnel
 
 tcpPort: &tcpServerPort 40000
 udpPort: &udpServerPort 50000
-promPort: &prometheusPort 9090
-kafPort: &kafkaPort 9092
-cAdvPort: &cAdvisorPort 8080
 mcPort: &memcachedPort 11211
+kafPort: &kafkaPort 9092
 esPort: &elasticsearchPort 9200
+promPort: &prometheusPort 9090
+cAdvPort: &cAdvisorPort 8080
 
 kafkaCId: &kafkaClusterId "YjkwYjY3ZWJiYWVmNGQ4ZT"
 kafkaUser: &kafkaClientUser "user"
@@ -14,57 +14,15 @@ kafkaPassword: &kafkaClientPassword "password"
 kafkaLogTopic: &kafkaLogsTopic "pods-logs"
 kafkaBcastTopic: &kafkaBroadcastTopic "broadcast"
 
-esUser: &elasticsearchUsername "elastic"
-esPass: &elasticsearchPassword "password"
-
-
-eck-operator:
-  securityContext: {}
+esName: &elasticsearchName "logs"
 
 elasticsearch:
-  extraEnvs:
-  - name: ingest.geoip.downloader.enabled
-    value: "false"
-  replicas: 1
-  minimumMasterNodes: 3
-  secret:
-    enabled: true
-    password: *elasticsearchPassword
-  httpPort: *elasticsearchPort
-  podSecurityContext: {}
-  securityContext:
-    capabilities:
-      add:
-        - ALL
-  volumeClaimTemplate:
-    accessModes: ["ReadWriteMany"]
-    resources:
-      requests:
-        storage: 10Gi
-
-logger:
-  image:
-    repository: docker.io/library/logger
-    tag: "1.2.1"
-    imagePullSecrets: []
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "128m"
-    limits:
-      memory: "512Mi"
-      cpu: "512m"
-  kafkaLogsTopic: *kafkaLogsTopic
-  kafkaPort: *kafkaPort
-  elasticsearchPort: *elasticsearchPort
-  elasticsearchUsername: *elasticsearchUsername
-  elasticsearchPassword: *elasticsearchPassword
+  name: *elasticsearchName
 
 tcp-server:
   image:
     repository: docker.io/library/tcp-server
-    tag: "1.1.0"
+    tag: "1.3.0"
     imagePullSecrets: []
     pullPolicy: IfNotPresent
   resources:
@@ -93,7 +51,7 @@ tcp-server:
 udp-server:
   image:
     repository: docker.io/library/udp-server
-    tag: "1.1.0"
+    tag: "1.3.0"
     imagePullSecrets: []
     pullPolicy: IfNotPresent
   resources:
@@ -117,6 +75,37 @@ udp-server:
   kafkaUser: *kafkaClientUser
   kafkaLogsTopic: *kafkaLogsTopic
   memcachedPort: *memcachedPort
+
+logger:
+  image:
+    repository: docker.io/library/logger
+    tag: "1.3.0"
+    imagePullSecrets: []
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "128m"
+    limits:
+      memory: "512Mi"
+      cpu: "512m"
+  kafkaLogsTopic: *kafkaLogsTopic
+  kafkaPort: *kafkaPort
+  elasticsearchName: *elasticsearchName
+  elasticsearchPort: *elasticsearchPort
+
+memcached:
+  containerPorts:
+    memcached: *memcachedPort
+  architecture: standalone
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "128m"
+    limits:
+      memory: "2048Mi"
+      cpu: "1024m"
 
 kafka:
   kraft:
@@ -144,19 +133,38 @@ kafka:
     persistence:
       accessModes: ["ReadWriteOnce"]
 
-memcached:
-  containerPorts:
-    memcached: *memcachedPort
-  architecture: standalone
-  replicaCount: 1
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "128m"
-    limits:
-      memory: "2048Mi"
-      cpu: "1024m"
-
+# elasticsearch:
+#   imageTag: "8.12.1"
+#   replicas: 1
+#   secret:
+#     enabled: true
+#     password: *elasticsearchPassword
+#   httpPort: *elasticsearchPort
+#   volumeClaimTemplate:
+#     resources:
+#       requests:
+#         storage: 10Gi
+#   extraInitContainers:
+#       - name: data-dir-permissions
+#         image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+#         imagePullPolicy: IfNotPresent
+#         command:
+#           - bash
+#           - -c
+#           - "chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/data"
+#         resources: {}
+#         securityContext:
+#           privileged: true
+#           runAsUser: 0
+#         volumeMounts:
+#           - name: elasticsearch-master
+#             mountPath: /usr/share/elasticsearch/data
+# 
+# 
+# kibana:
+#   imageTag: "8.12.1"
+  # updateStrategy:
+    # type: "RollingUpdate"
 
 kube-prometheus-stack:
     namespaceOverride: monitoring

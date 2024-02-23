@@ -39,9 +39,12 @@ spec:
           - name: ELASTICSEARCH_USERNAME
             value: {{ .Values.elasticsearchUsername }}
           - name: ELASTICSEARCH_PASSWORD
-            value: {{ .Values.elasticsearchPassword }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ printf "%s-es-elastic-user" .Release.Name }}
+                key: {{ .Values.elasticsearchUsername }}
           - name: ELASTICSEARCH_ENDPOINT
-            value: {{ printf "https://elasticsearch-master.%s:%v" .Release.Namespace .Values.elasticsearchPort }}
+            value: {{ printf "https://%s-es-%s.%s:%v" .Release.Name .Values.elasticsearchName .Release.Namespace .Values.elasticsearchPort }}
           - name: KAFKA_BROKERS
             value: {{ printf "%s-kafka.%s:%v" .Release.Name .Release.Namespace .Values.kafkaPort }}
           - name: KAFKA_SASL_USER

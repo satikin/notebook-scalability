@@ -1,9 +1,9 @@
-A simple Go TCP server (one routine per user). Clients are able to save/retrieve arbitrary data in/from Memcached & broadcast to all clients connected to this service. Kafka is utilized to forward broadcasting events to all running instances of the software (k8s pods) & log custom messages to Elasticsearch through `logger/` middleware. `infrastructure/local-dev` has docker compose files to set Memcached & Kafka.
+A simple Go TCP server (one routine per connection). Clients are able to save/retrieve arbitrary data in/from Memcached & broadcast to all clients. Kafka is utilized to forward broadcasting events to all running instances of the software (k8s pods) & log custom messages to Elasticsearch through `logger/` middleware. `infrastructure/local-dev` has docker compose files to set Memcached & Kafka.
 
 ### Interacting
 
 The server interacts to the following message prefixes:
-- `token`: generates a uuid, stores it in memcached alongside clients remote address
+- `token`: generates a uuid, stores it in memcached alongside client's remote address
 - `msg:{content}`: echoes back the content
 - `mcset:{token}:{key}:{value}`: sets the key/value pair in memcached if the token is valid (exists as key in memcached and its value matches client's remote address). Key is prefixed with "c-" to disallow clients directly writing/reading any key/value.
 - `mcget:{token}:{key}`: sends to the client the value of "key" from memcached ("c-" prefixed)

@@ -2,28 +2,29 @@
 
 A playground with the following toys:
 - **Go** programing language for the core / source code
-- **Kafka** as a message broker, to achieve communication between servers
-- **Memcached** as a cache for both arbitrary and functioning data
+- **Kafka** as a message broker, to achieve communication between services
 - **Elasticsearch** as a software log database
-- **Kubernetes** to deploy, manage, scale the infrastructure
+- **Kubernetes** to deploy, manage & scale the infrastructure
 - **Prometheus** / **cAdvisor** to monitor the infrastructure
 - **Helm** to automate the infrastructure deployment
 - **ArgoCD** for continuous deployment
 
 Being a playground, the purpose is the research of these technologies with **scalability** in mind:
 - Go's concurrency is exploited to handle connections/packets in two major internet layer's communication protocols.
-- The full strength of Kubernetes' horizontal scaling capabilities (combined with the correct setup of monitoring software) is extracted by taking into account not only cpu/memory utilization, but also to protocol specific metrics (e.g. established TCP state or packets per second)
+- The full strength of Kubernetes' horizontal scaling capabilities (combined with the correct setup of monitoring software) is extracted by taking into account not only cpu/memory utilization, but also protocol specific metrics (e.g. established TCP state or packets per second)
 
 Each subfolder has a dedicated README:
-- `tcp`, `udp` are the TCP & UDP servers' source code 
-- `infrastructure/docker` is the Dockerfile to build the images for the TCP/UDP servers
-- `infrastructure/helm-chart` is a root chart which depends on either remote (Kafka, Prometheus, cAdvisor) or local charts (defined in `charts` subdirectory - they manage the TCP & UDP server deployments)
-- `client` is the application to test the servers written in Go
+- `tcp`, `udp` are the TCP & UDP servers' source code
+- `logger` is a Kafka consumer which writes to Elasticsearch on message
+- `utils` is a module with common functionality
+- `infrastructure/docker` has the dockerfiles to build the images
+- `infrastructure/helm-chart` is a root chart which depends on either remote (Kafka, Prometheus, cAdvisor) or local charts (defined in `charts` subdirectory - they manage the TCP, UDP servers & logger deployments)
+- `client` is the application to test the servers
 
 
 # Autoscaling
 
-Using Kubernetes' [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) to added/remove pods once criteria are met.
+Using Kubernetes' [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) to add/remove pods once criteria are met.
 
 
 `SIGTERM` is appropriately handled to gracefully shut down the containers.

@@ -22,25 +22,6 @@ nc -u localhost 50000
 Or run the Go application in `client/` directory, as described in its README.
 
 
-### Local
-
-Requires a Memcached server. It can be set by running `docker compose up` in `infrastructure/local-dev/kafka-memcached`
-
-A simple Go UDP server. A worker pool pattern is used to read messages and an additional routine is spawned to "process it" to respond.
-
-- Echoes back the contect if the received message has the specified prefix (`msg`)
-- Like the TCP server, packets are accepted for a while if `SIGTERM` has been received
-- Scales relatively to cpu & memory utilization, count of received messages
-
-
-To test it with netcat:
-```
-nc -u localhost 50000
-msg:123
-```
-
-Or run the Go application in `client/` directory, as described in its README.
-
 # Tests
 
 ```

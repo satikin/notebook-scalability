@@ -25,7 +25,6 @@ appVersion: "1.16.0"
 
 dependencies:
 - name: tcp-server
-  #alias: tcp-server
   version: "0.1.0"
   repository: "file://charts/playground-tcp"
 - name: udp-server
@@ -34,18 +33,12 @@ dependencies:
 - name: logger
   version: "0.1.0"
   repository: "file://charts/playground-logger"
-- name: kafka
-  version: "26.8.5"
-  repository: "https://charts.bitnami.com/bitnami"
 - name: eck-operator
   version: "2.11.1"
   repository: "https://helm.elastic.co"
-- name: elasticsearch
-  version: "8.5.1"
-  repository: "https://helm.elastic.co"
-# - name: kibana
-#   version: "8.5.1"
-#   repository: "https://helm.elastic.co"
+- name: kafka
+  version: "26.8.5"
+  repository: "https://charts.bitnami.com/bitnami"
 - name: cadvisor
   version: "2.3.1"
   repository: "https://ckotzbauer.github.io/helm-charts"

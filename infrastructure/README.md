@@ -22,6 +22,7 @@ docker build --build-arg APP_DIR=logger -f infrastructure/docker/Dockerfile.logg
 ```
 minikube -p playground image load --overwrite=true docker.io/library/tcp-server:1.0.1
 minikube -p playground image load --overwrite=true docker.io/library/udp-server:1.0.1
+minikube -p playground image load --overwrite=true docker.io/library/logger:1.0.1
 ```
 - tunnel connections / use external load balancing
 ```
@@ -29,18 +30,9 @@ minikube -p playground tunnel
 ```
 
 
-### [TODO] Elasticsearch
-
-kubectl create -f https://download.elastic.co/downloads/eck/2.11.1/crds.yaml -n playground
-
-
 # Configuring
 
 - `infrastructure/helm-chart/values.yaml` is the entry point; subcharts can be configured from there.
-
-## Kafka
-
-- User / password authentication is taking place (SASL/plaintext)
 
 ## Kubernetes Prometheus stack
 
@@ -51,12 +43,12 @@ Most of [kube-prometheus-stack](https://artifacthub.io/packages/helm/prometheus-
 
 Only `network`, `tcp`, `udp` [metrics](https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md#prometheus-container-metrics) are enabled to decrease resource utilization.
 
-It is deployed to the main namespace due to the remote chart's `namespaceOverride` value absence.
+It is deployed to the main namespace due to the remote chart's `namespaceOverride` absence.
 
 
 # Deploying with Helm
 
-- create monitoring
+- create monitoring namespace
 ```
 kubectl create namespace monitoring
 ```
@@ -64,19 +56,28 @@ kubectl create namespace monitoring
 ```
 kubectl create namespace playground
 ```
-- in `infrastructure/helm-chart`:
-```
-helm dependency build --namespace playground
-helm install playground . --namespace playground
-```
-
-- alias namespace for current terminal
+- alias helm and kubectl commands for current terminal session:
 ```
 alias k="kubectl --namespace playground"
 alias h="helm --namespace playground"
 ```
+- (required because eck-operator-crds need to be installed) comment everything in `templates/ek.yaml`
+- build Helm dependencies and deploy, in `infrastructure/helm-chart`:
+```
+h dependency build
+h install playground .
+```
+- uncomment contents of `templates/ek.yaml` and redeploy:
+```
+h upgrade playground .
+```
 
-# ArgoCD simplified instructions
+To access Kibana GUI:
+- `k get secret playground-es-elastic-user -o=jsonpath='{.data.elastic}' | base64 --decode; echo` to get the password
+- `k port-forward services/playground-kb-http 5601`
+- navigate to `https://localhost:5601`, login as user `elastic` with the password from 1st step
+
+# ArgoCD installation simplified instructions
 
 - installed OS client
 - followed https://argo-cd.readthedocs.io/en/stable/getting_started/ using forward and not ingress (skipped steps 3-5):
@@ -88,3 +89,11 @@ alias h="helm --namespace playground"
 - opened localhost:8080
 - set up repository using private key
 - created app / synced (make sure playground/monitoring namespaces are created)
+
+# Versions
+
+- Docker: `24.0.7`
+- Kubernetes: `v1.28.3`
+- kubectl: `v1.29.1`
+- Helm: `v3.13.3`
+- Minikube: `v1.32.0`

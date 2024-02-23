@@ -1,4 +1,4 @@
-## TCP
+# TCP server autoscaling
 
 Run the client against a minikube cluster with 2 nodes, opening 1 connection every 5 ms, sending a message for each connection every 1 second, for 240 seconds, 10000 connections. HorizontalPodAutoscaler's average value for average established connections is 5k.
 
