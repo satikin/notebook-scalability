@@ -21,6 +21,10 @@ Each subfolder has a dedicated README:
 - `infrastructure/helm-chart` is a root chart which depends on either remote (Kafka, Prometheus, cAdvisor) or local charts (defined in `charts` subdirectory - they manage the TCP, UDP servers & logger deployments)
 - `client` is the application to test the servers
 
+##
+
+![Architecture](docs/images/architecture.png?raw=true "Architecture")
+
 
 # Autoscaling
 

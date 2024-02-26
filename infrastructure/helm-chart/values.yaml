@@ -133,39 +133,6 @@ kafka:
     persistence:
       accessModes: ["ReadWriteOnce"]
 
-# elasticsearch:
-#   imageTag: "8.12.1"
-#   replicas: 1
-#   secret:
-#     enabled: true
-#     password: *elasticsearchPassword
-#   httpPort: *elasticsearchPort
-#   volumeClaimTemplate:
-#     resources:
-#       requests:
-#         storage: 10Gi
-#   extraInitContainers:
-#       - name: data-dir-permissions
-#         image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
-#         imagePullPolicy: IfNotPresent
-#         command:
-#           - bash
-#           - -c
-#           - "chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/data"
-#         resources: {}
-#         securityContext:
-#           privileged: true
-#           runAsUser: 0
-#         volumeMounts:
-#           - name: elasticsearch-master
-#             mountPath: /usr/share/elasticsearch/data
-# 
-# 
-# kibana:
-#   imageTag: "8.12.1"
-  # updateStrategy:
-    # type: "RollingUpdate"
-
 kube-prometheus-stack:
     namespaceOverride: monitoring
     kube-state-metrics:
