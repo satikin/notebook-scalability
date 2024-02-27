@@ -21,7 +21,6 @@ func shoot(
 	conf *Conf,
 	succPktsCh chan int,
 	errPktsCh chan int,
-	i int,
 	scaledDown chan int,
 ) {
 	conn, err := net.Dial(protocol, conf.host+":"+conf.port)
@@ -39,7 +38,7 @@ func shoot(
 	for open == true {
 		select {
 		case <-tic.C:
-			_, err := conn.Write([]byte("msg12345"))
+			_, err := conn.Write([]byte("msg:12345"))
 			if err != nil {
 				errPkts++
 				log.Println(err)
@@ -59,7 +58,7 @@ func shoot(
 					// log.Println(err)
 					scaledDown <- 1
 					time.Sleep(1*time.Second)
-					go shoot(protocol, conf, succPktsCh, errPktsCh, i, scaledDown)
+					go shoot(protocol, conf, succPktsCh, errPktsCh, scaledDown)
 					open = false
 					continue
 				} else {
@@ -72,7 +71,7 @@ func shoot(
 				if string(buff[:5]) == "recon" {
 					scaledDown <- 1
 					time.Sleep(1*time.Second)
-					go shoot(protocol, conf, succPktsCh, errPktsCh, i, scaledDown)
+					go shoot(protocol, conf, succPktsCh, errPktsCh, scaledDown)
 					open = false
 					continue
 				}
@@ -108,14 +107,15 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	args := os.Args[1:]
 	c, _ := strconv.Atoi(args[1])
-	conf := Conf{5, 1000, 240, args[2], args[3], 50*time.Millisecond}
+	start := time.Now()
+	conf := Conf{20, 250, 60, args[2], args[3], 50*time.Millisecond}
 	succPktsCh := make(chan int, 32)
 	errPktsCh := make(chan int, 32)
 	scaledDown := make(chan int, 32)
 	for i := 0; i < c; i++ {
 		// r := rand.Intn(10) time.Duration(r)
 		time.Sleep(conf.connInterval * time.Millisecond)
-		go shoot(args[0], &conf, succPktsCh, errPktsCh, i, scaledDown)
+		go shoot(args[0], &conf, succPktsCh, errPktsCh, scaledDown)
 	}
 	for {
 		if doneClis == c {
@@ -133,12 +133,17 @@ func main() {
 			cntErr += n
 		}
 	}
+	end := time.Now()
+	diff := end.Sub(start)
+	log.Printf("Took: %v", diff)
+	tPkts := c * int(conf.alive)*1e3 / int(conf.packetInterval) - c
+	log.Printf("Packets sent: %v",  tPkts )
+	log.Printf("Received packets: %v",  cnt+cntErr )
 	printStats(cnt, cntErr, scaledClis)
 	
 }
 func printStats(cnt int, cntErr int, scaledClis int) {
-	log.Printf("Successfull: %v%%",  float64(cnt * 1e2) / float64(cnt+cntErr) )
+	// log.Printf("Successfull: %v%%",  float64(cnt * 1e2) / float64(cnt+cntErr) )
 	log.Printf("Timeout err: %v%%",  float64(cntErr * 1e2) / float64(cnt+cntErr) )
-	log.Printf("Total packets: %v",  cnt+cntErr )
 	log.Printf("Reset connections: %v",  scaledClis )
 }
