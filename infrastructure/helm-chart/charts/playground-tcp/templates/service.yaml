@@ -8,14 +8,10 @@ spec:
   type: {{ .Values.service.type }}
   selector:
     {{- include "playground-tcp.selectorLabels" . | nindent 4 }}
-  externalTrafficPolicy: Cluster
+  # externalTrafficPolicy: Cluster
   ports:
   - name: tcp
     port: {{ .Values.service.port }}
     protocol: TCP
-  externalIPs:
-    {{- range $ip := .Values.service.externalIPs }}
-    - {{ $ip }}
-    {{- end}}
-  clusterIP: {{ .Values.service.clusterIP }}
-  clusterIPs: {{ .Values.service.clusterIPs }}
+  # clusterIP: {{ .Values.service.clusterIP }}
+  # clusterIPs: {{ .Values.service.clusterIPs }}

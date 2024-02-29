@@ -3,7 +3,9 @@
 A playground with the following toys:
 - **Go** programing language for the core / source code
 - **Kafka** as a message broker, to achieve communication between services
+- **Memcached** as a cache, to store/serve arbitrary data
 - **Elasticsearch** as a software log database
+- **Envoy gateway** as a gateway / load balancer
 - **Kubernetes** to deploy, manage & scale the infrastructure
 - **Prometheus** / **cAdvisor** to monitor the infrastructure
 - **Helm** to automate the infrastructure deployment
@@ -30,10 +32,12 @@ Each subfolder has a dedicated README:
 
 Using Kubernetes' [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) to add/remove pods once criteria are met.
 
-
 `SIGTERM` is appropriately handled to gracefully shut down the containers.
 
 cAdvisor is deployed in a pod in each node - it is a DaemonSet. Once a new node is added, it replicates there, and its metrics are scraped from Prometheus using the pod's label. Test it out by manually adding a node (`minikube node add -p {profile name}`)
+
+
+[Envoy gateway](https://gateway.envoyproxy.io/) has been set to use "Least request"; when a new pod spawns new connections/packets are redirected to it. Its Kubernetes CRDs' were bugging as of 0.6.0; it kept a maximum of 1024 connections no matter if CircuitBreaker / BackendTrafficPolicy is set. Hence, it is deployed by a Kubernetes DaemonSet (with the required resources).
 
 # Go tests / coverage / Sonarqube integration
 

@@ -24,11 +24,11 @@ func shoot(
 	scaledDown chan int,
 ) {
 	conn, err := net.Dial(protocol, conf.host+":"+conf.port)
-	defer conn.Close()
 	if err != nil {
 		log.Println("Dial err:", err)
 		return
 	}
+	defer conn.Close()
 	tout := time.NewTimer(conf.alive * time.Second)
 	tic := time.NewTicker(conf.packetInterval * time.Millisecond)
 	open := true
@@ -108,7 +108,7 @@ func main() {
 	args := os.Args[1:]
 	c, _ := strconv.Atoi(args[1])
 	start := time.Now()
-	conf := Conf{20, 250, 60, args[2], args[3], 50*time.Millisecond}
+	conf := Conf{15, 250, 60, args[2], args[3], 50*time.Millisecond}
 	succPktsCh := make(chan int, 32)
 	errPktsCh := make(chan int, 32)
 	scaledDown := make(chan int, 32)
@@ -142,6 +142,7 @@ func main() {
 	printStats(cnt, cntErr, scaledClis)
 	
 }
+
 func printStats(cnt int, cntErr int, scaledClis int) {
 	// log.Printf("Successfull: %v%%",  float64(cnt * 1e2) / float64(cnt+cntErr) )
 	log.Printf("Timeout err: %v%%",  float64(cntErr * 1e2) / float64(cnt+cntErr) )

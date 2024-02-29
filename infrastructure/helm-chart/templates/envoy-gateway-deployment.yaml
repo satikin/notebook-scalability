@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy-gateway
+  labels:
+    app: envoy-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envoy-gateway
+  template:
+    metadata:
+      labels:
+        app: envoy-gateway
+    spec:
+      containers:
+      - name: envoy-gateway
+        image: "{{ .Values.envoyGateway.image.repository }}:{{ .Values.envoyGateway.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.envoyGateway.port }}
+        resources:
+            {{- toYaml .Values.envoyGateway.resources | nindent 12 }}
+        volumeMounts:
+          - name: envoy-conf
+            mountPath: /etc/envoy/
+      volumes:
+        - name: envoy-conf
+          configMap:
+            name: envoy-gateway-config
+            items:
+            - key: envoy.yaml
+              path: envoy.yaml

@@ -15,4 +15,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o dist
 
 FROM scratch
 COPY --from=build /server/dist /dist
-USER nonroot:nonroot
+# USER nonroot:nonroot

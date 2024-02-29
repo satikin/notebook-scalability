@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-gateway-tcp
+  labels:
+    app: envoy-gateway-tcp
+spec:
+  type: LoadBalancer
+  selector:
+    app: envoy-gateway
+  externalTrafficPolicy: Cluster
+  ports:
+  - name: tcp
+    port: {{ .Values.envoyGateway.tcpLPort }}
+    protocol: TCP
+  - name: udp
+    port: {{ .Values.envoyGateway.udpLPort }}
+    protocol: UDP
+  {{- with .Values.envoyGateway.service.externalIPs }}
+  externalIPs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}

@@ -1,4 +1,8 @@
-lbIPAddrs: &externalIPs [192.168.58.2] # calico cni / minikube tunnel
+# calico cni / minikube tunnel
+lbIPAddrs: &externalIPs
+  - 192.168.58.2
+
+gwPort: &gatewayPort 10000
 
 tcpPort: &tcpServerPort 40000
 udpPort: &udpServerPort 50000
@@ -15,6 +19,27 @@ kafkaLogTopic: &kafkaLogsTopic "pods-logs"
 kafkaBcastTopic: &kafkaBroadcastTopic "broadcast"
 
 esName: &elasticsearchName "logs"
+
+# need to secure this
+envoyGateway:
+  tcpLPort: 10000
+  udpLPort: 10001
+  maxTCPConnections: 50000
+  maxUDPConnections: 50000
+  adminPort: 20000
+  port: *gatewayPort
+  service:
+    externalIPs: *externalIPs
+  image:
+    repository: envoyproxy/envoy
+    tag: "dev-b79d9f17bb6f9e42c6ce3fabd1570a43dceaaa69"
+  resources:
+    requests:
+      cpu: "256m"
+      memory: "128Mi"
+    limits:
+      cpu: "1024m"
+      memory: "512Mi"
 
 elasticsearch:
   name: *elasticsearchName
@@ -35,13 +60,12 @@ tcp-server:
   autoscaling:
     minReplicas: 1
     maxReplicas: 5
-    maxEstablishedTCP: 3k
+    maxEstablishedTCP: 2k
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
   service:
-    type: LoadBalancer
+    type: ClusterIP
     port: *tcpServerPort
-    externalIPs: *externalIPs
   kafkaPort: *kafkaPort
   kafkaUser: *kafkaClientUser
   kafkaLogsTopic: *kafkaLogsTopic
@@ -68,9 +92,8 @@ udp-server:
     targetCPUUtilizationPercentage: 120
     targetMemoryUtilizationPercentage: 120
   service:
-    type: LoadBalancer
+    type: ClusterIP
     port: *udpServerPort
-    externalIPs: *externalIPs
   kafkaPort: *kafkaPort
   kafkaUser: *kafkaClientUser
   kafkaLogsTopic: *kafkaLogsTopic

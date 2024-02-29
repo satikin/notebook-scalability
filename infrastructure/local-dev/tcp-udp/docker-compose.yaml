@@ -9,25 +9,32 @@ networks:
 services:
   udp-server:
     restart: on-failure
+    hostname: udp-server
     # depends_on:
     #   - memcached
     networks:
       - playground
-    image: 'udp-server:1.0.3'
+    image: 'udp-server:1.0.1'
     ports:
       - '50000:50000/udp'
-    command: ["/usr/src/server/dist"]
+    command: ["/dist"]
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - MEMCACHED_SERVICE=memcached
+      - MEMCACHED_PORT=11211
   tcp-server:
     restart: on-failure
+    hostname: tcp-server
     # depends_on:
     #   - kafka
     #   - memcached
     networks:
       - playground
-    image: 'tcp-server:1.0.3'
+    image: 'tcp-server:1.0.1'
     ports:
       - '40000:40000'
-    command: ["/usr/src/server/dist"]
+    command: ["/dist"]
     environment:
       - KAFKA_BROKERS=kafka:9092
-      - MEMCACHED=memcached:11211
+      - MEMCACHED_SERVICE=memcached
+      - MEMCACHED_PORT=11211

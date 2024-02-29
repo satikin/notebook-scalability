@@ -8,14 +8,9 @@ spec:
   type: {{ .Values.service.type }}
   selector:
     {{- include "playground-udp.selectorLabels" . | nindent 4 }}
-  externalTrafficPolicy: Cluster
   ports:
   - name: udp
     port: {{ .Values.service.port }}
     protocol: UDP
-  externalIPs:
-    {{- range $ip := .Values.service.externalIPs }}
-    - {{ $ip }}
-    {{- end}}
-  clusterIP: {{ .Values.service.clusterIP }}
-  clusterIPs: {{ .Values.service.clusterIPs }}
+  # clusterIP: {{ .Values.service.clusterIP }}
+  # clusterIPs: {{ .Values.service.clusterIPs }}

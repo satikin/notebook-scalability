@@ -62,8 +62,9 @@ alias k="kubectl --namespace playground"
 alias h="helm --namespace playground"
 ```
 - (required because eck-operator-crds need to be installed) comment everything in `templates/ek.yaml`
-- build Helm dependencies and deploy, in `infrastructure/helm-chart`:
+- build Helm dependencies/required CRDs and deploy, in `infrastructure/helm-chart`:
 ```
+kubectl create -f https://github.com/envoyproxy/gateway/releases/download/latest/install.yaml
 h dependency build
 h install playground .
 ```
@@ -76,6 +77,22 @@ To access Kibana GUI:
 - `k get secret playground-es-elastic-user -o=jsonpath='{.data.elastic}' | base64 --decode; echo` to get the password
 - `k port-forward services/playground-kb-http 5601`
 - navigate to `https://localhost:5601`, login as user `elastic` with the password from 1st step
+
+Test if the services are listening:
+```
+nc 192.168.58.2 10000
+msg:123
+# should print 123
+```
+
+```
+nc 192.168.58.2 10001 -u
+msg:123
+# should print 123
+```
+
+Where 192.168.58.2 is the main node's IP address as assigned by minikube/calico
+
 
 # ArgoCD installation simplified instructions
 
